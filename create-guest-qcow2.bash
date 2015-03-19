@@ -122,8 +122,8 @@ create_guest()
 
 usage ()
 {
-+ echo -e "Usage: $prog [OPTIONS] <vm-name> <distro> <arch> [destination directory]\n"
-+ echo " distro: f20 f21 f22 fraw or http os source like: http://.../pub/fedora/linux/development/latest-22/x86_64/os/"
+    echo -e "Usage: $prog [OPTIONS] <vm-name> <distro> <arch> [destination directory]\n"
+    echo " distro: f20 f21 f22 fraw or http os source like: http://.../pub/fedora/linux/development/latest-22/x86_64/os/"
     echo "    arch: i386, x86_64"
     echo "    destination directory: directory, where to store image instead of default one"
 }
