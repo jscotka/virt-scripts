@@ -52,6 +52,7 @@ checksum=$SHASUM
 format=$TYPE
 size=$UNSIZE
 compressed_size=$COMSIZE
+
 EOF
 set +x
 }
