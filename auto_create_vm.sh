@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# example: ./auto_create_vm.sh cockpit ~/build
+
 prog=`basename $0`
 
 function printh() {
