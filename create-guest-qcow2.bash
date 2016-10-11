@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Copyright (C) 2015 Red Hat Inc.
-# Author: <kashyap@redhat.com>
-# Further contributions: <pjp@fedoraproject.org>
+# Copyright (C) 2016 Red Hat Inc.
+# Author: Kashyap Chamarthy <kashyap@redhat.com>
+# Further contributions: Prasad J. Pandit <pjp@fedoraproject.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,21 +27,21 @@
 #       - http://wiki.libvirt.org/page/Networking
 #       - https://kashyapc.fedorapeople.org/virt/configuring-bridging-f19+.txt
 # - The kickstart file contains minimal Fedora packages (@core)
-# - This script also provides a serial console
+# - This script also provides access to serial console to the VM
 
 
 #set -x
 
-VERSION="0.1"
+VERSION="0.3"
 prog=`basename $0`
 
 fstype="ext4"
 IMAGE_HOME="/var/lib/libvirt/images"
 
 burl="http://dl.fedoraproject.org/pub"
-location1="$burl/fedora/linux/releases/20/Fedora/ARCH/os"
-location2="$burl/fedora/linux/releases/21/Server/ARCH/os"
-
+location1="$burl/fedora/linux/releases/22/Server/ARCH/os"
+location2="$burl/fedora/linux/releases/23/Server/ARCH/os"
+location3="$burl/fedora/linux/development/rawhide/ARCH/os"
 
 # Create a minimal kickstart file and return the temporary file name.
 # Do remember to delete this temporary file when it is no longer required.
@@ -54,7 +54,7 @@ create_ks_file()
     cat << EOF > $fkstart
 install
 text
-reboot
+shutdown
 lang en_US.UTF-8
 keyboard us
 network --bootproto dhcp
@@ -112,7 +112,8 @@ create_guest()
     --hvm \
     --location=$locn \
     --nographics \
-    --serial=pty
+    --serial=pty\
+    --noreboot
 
     rm $fkst
     return 0
@@ -120,9 +121,24 @@ create_guest()
 
 usage ()
 {
-    echo -e "Usage: $prog [OPTIONS] <vm-name> <distro> <arch>\n"
-    echo "  distro: f20 f21"
-    echo "    arch: i386, x86_64"
+ echo -e "Usage: $prog [OPTIONS] <vm-name> <distro> <arch> [dest-dir]\n"
+
+echo "distro   : f22, f23, rawhide,
+           [Or, path to HTTP URL, like]: http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/x86_64/os/"
+echo "arch     : x86_64, i386"
+echo "dest-dir : /path/dest-dir [Optional: Alternate directory to store images,
+           assuming QEMU has access to it, i.e. 'chmod go+rx /path/dest-dir']
+
+EXAMPLES:
+
+  # Create a Fedora-23 VM:
+  ./`basename $0` vm1 f23 x86_64
+
+  # Create a Fedora-23 VM, and store the VM disk image in the said dir:
+  ./`basename $0` vm2 f23 x86_64 /export/vmimages
+
+  # Create a Fedora-23 VM, with the specified Fedora tree URL:
+  ./`basename $0` vm3 http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/x86_64/os/ x86_64"
 }
 
 printh ()
@@ -134,7 +150,8 @@ printh ()
     printf "$format" "  -f <FSTYPE>" "specify file system type, default: ext4"
     printf "$format" "  -h" "display this help"
     printf "$format" "  -v" "display version information"
-    printf "\nReport bugs to Kashyap <kashyap@redhat.com>\n"
+    printf "\nReport bugs here:
+    https://github.com/kashyapc/virt-scripts/issues\n"
 }
 
 check_options ()
@@ -177,7 +194,7 @@ check_options ()
 
     # check if min no. of arguments are 3
     #
-    if [ "$#" != 3 ]; then
+    if [ "$#" -lt 3 ]; then
         printh;
         exit 255
     fi
@@ -194,20 +211,32 @@ check_options ()
     name=$1
     dist=$2
     arch=$3
+    destdir=$4
+    test -n "$destdir" && IMAGE_HOME="$destdir"
     dimg="$IMAGE_HOME/$name.qcow2"
 
     locn=""
     case "$dist" in
-        f20)
-        dist="fedora20"
+        f22)
+        dist="fedora22"
         locn=${location1/ARCH/$arch}
         ;;
-
-        f21)
-        dist="fedora21"
+        
+        f23)
+        dist="fedora23"
         locn=${location2/ARCH/$arch}
         ;;
 
+        rawhide)
+        dist="fedora23"
+        locn=${location3/ARCH/$arch}
+        ;;
+
+        http*)
+        locn=${dist/ARCH/$arch}
+        echo "RAW version: $locn"
+        dist="fedora23"
+        ;;
 
         *)
         echo "$0: invalid distribution name"
