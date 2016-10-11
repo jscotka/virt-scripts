@@ -113,6 +113,7 @@ create_guest()
     --location=$locn \
     --nographics \
     --serial=pty\
+    --arch=$arch\
     --noreboot
 
     rm $fkst
